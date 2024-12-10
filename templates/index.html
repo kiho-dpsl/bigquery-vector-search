@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        input[name="query"] {
+            width: 50%;
+            padding: 10px;
+            font-size: 18px;
+        }
+        button[type="submit"] {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+        }
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        async function search(event) {
+            event.preventDefault();
+            const query = document.querySelector('input[name="query"]').value;
+            const button = document.querySelector('button[type="submit"]');
+            const spinner = button.querySelector('.spinner');
+            const buttonText = button.querySelector('span');
+
+            buttonText.style.visibility = 'hidden';
+            spinner.style.display = 'block';
+
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ query: query })
+            });
+
+            const data = await response.json();
+
+            const tableBody = document.querySelector('#results tbody');
+            tableBody.innerHTML = '';
+
+            if (data.results.length > 0) {
+                data.results.sort((a, b) => b.score - a.score);
+                data.results.forEach(result => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${result.name || "NaN"}</td>
+                        <td>${result.email || "NaN"}</td>
+                        <td>${result.job_title || "NaN"}</td>
+                        <td>${result.company || "NaN"}</td>
+                        <td>${result.location || "NaN"}</td>
+                        <td>${result.industry || "NaN"}</td>
+                        <td>${result.score || 0}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="7">No results found for query: "${query}"</td>`;
+                tableBody.appendChild(row);
+            }
+
+            buttonText.style.visibility = 'visible';
+            spinner.style.display = 'none';
+        }
+    </script>
+</head>
+<body>
+    <h1>Vector Search</h1>
+    <form onsubmit="search(event)">
+        <input type="text" name="query" placeholder="Enter your query" required>
+        <button type="submit">
+            <span>Search</span>
+            <div class="spinner"></div>
+        </button>
+    </form>
+
+    <div id="results">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Industry</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Search Result -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
